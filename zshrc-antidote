@@ -1,50 +1,51 @@
+# Enable Powerlevel10k instant prompt
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
 # LLM
-export GEMINI_API_KEY=""
 export GEMINI_MODEL="gemini-3.6-flash"
 export GO_GEMINI_MODEL="gemini-3.6-flash"
 
 export ANTHROPIC_MODEL="claude-opus-5"
 export ANTHROPIC_BASE_URL="co.agentrouter.org"
-export ANTHROPIC_AUTH_TOKEN=""
-
-export HF_TOKEN=""
 # End of LLM
 
+export TIMEFMT=$'\nreal\t%E\nuser\t%U\nsys\t%S'  # Better time formatting
+export BLOCK_SIZE=human-readable
+
 # Antidote plugin manager
-if [[ ! -d ~/.antidote ]]; then
-  git clone --depth=1 https://github.com/mattmc3/antidote.git ~/.antidote
+if [[ ! -d $HOME/.antidote ]]; then
+  git clone --depth=1 https://github.com/mattmc3/antidote.git $HOME/.antidote
 fi
-source ~/.antidote/antidote.zsh
 
 # Load plugins with Antidote
-antidote bundle < ~/.zsh_plugins.txt > ~/.zsh_plugins.zsh
-source ~/.zsh_plugins.zsh
-antidote load
+source "$HOME/.antidote/antidote.zsh"
+
+if [[ ! -f "$HOME/.zsh_plugins.zsh" ||
+      "$HOME/.zsh_plugins.txt" -nt "$HOME/.zsh_plugins.zsh" ]]; then
+  antidote bundle < "$HOME/.zsh_plugins.txt" > "$HOME/.zsh_plugins.zsh"
+fi
+
+source "$HOME/.zsh_plugins.zsh"
 
 autoload -U zmv
 autoload -Uz compinit
 compinit -C
 
 # Correct typos
-setopt correct
+setopt correctall
 
 # Enable menu-style completion
 zstyle ':completion:*' complete-options true
 zstyle ':completion:*' menu select=2
 
 # Make completion case-insensitive
-zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
-
 zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
 zmodload zsh/complist
 
-# Enable Powerlevel10k instant prompt
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
-
 # Powerlevel10k theme
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+[[ ! -f $HOME/.p10k.zsh ]] || source $HOME/.p10k.zsh
 
 # Init zoxide (jump)
 eval "$(zoxide init zsh)"
@@ -57,23 +58,14 @@ fi
 
 # ZSH history settings
 setopt append_history
+setopt inc_append_history # Write history after every command
+setopt share_history
 setopt hist_expire_dups_first
 setopt hist_fcntl_lock
 setopt hist_ignore_all_dups
 setopt hist_lex_words
 setopt hist_reduce_blanks
 setopt hist_save_no_dups
-setopt share_history
-
-export CLICOLOR=1
-export TERM=xterm-256color
-export COLORTERM=truecolor
-export LS_COLORS="$(vivid generate gruvbox-dark)"
-
-export BLOCK_SIZE=human-readable
-export HISTSIZE=11000
-export SAVEHIST=10000
-export HISTFILE=~/.zsh_history
 
 # Autosuggestions clear settings
 ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-search-down)
@@ -87,12 +79,9 @@ zmodload zsh/terminfo
 bindkey "$terminfo[kcuu1]" history-substring-search-up
 bindkey "$terminfo[kcud1]" history-substring-search-down
 
-# Preferred language environment
-export LANG=en_US.UTF-8
-
 # Load FZF if available
-if [ -f ~/.fzf.zsh ]; then
-  source ~/.fzf.zsh
+if [ -f $HOME/.fzf.zsh ]; then
+  source $HOME/.fzf.zsh
   fshow() {
     git log --graph --color=always \
       --format="%C(auto)%h%d %s %C(green)%cr%C(reset)" "$@" |
@@ -108,14 +97,9 @@ FZF-EOF"
   export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border"
 fi
 
-# Python venv auto-activation setup
-# should be defined before functions are loaded
-PRO_PROJECT_ROOT="$HOME/pro"
-PRO_VENV="$HOME/py.env"
-
 # Aliases and other sources
-if [ -d ~/.zsh_includes ]; then
-  for file in ~/.zsh_includes/*.*sh; do
+if [ -d $HOME/.zsh_includes ]; then
+  for file in $HOME/.zsh_includes/*.*sh; do
     [ -f "$file" ] && source "$file"
   done
 fi
@@ -123,7 +107,7 @@ fi
 # Terminal and keybinding settings
 case $TERM in
   *xterm*)
-    bindkey "^[[3~" delete-char
+    bindkey "^[[3$HOME" delete-char
     bindkey "^[a" beginning-of-line
     bindkey "^[^B" beginning-of-line
     bindkey "^[[1;5D" beginning-of-line
@@ -133,37 +117,8 @@ case $TERM in
     bindkey "^[[A" up-line-or-search
     bindkey "^[[B" down-line-or-search
     bindkey '^U' backward-kill-line
-    bindkey '^[e' redo
     ;;
 esac
-
-set umask 002
-
-export HOMEBREW_NO_ANALYTICS=1
-export HOMEBREW_NO_ENV_HINTS=1
-
-# ======== LESS (BETTER PAGING) ========
-export LESS="-RFX"
-export LESSHISTFILE="-"
-
-# ======== MANPAGER (BETTER MAN PAGES) ========
-export MANPAGER="less -R --use-color -Dd+r -Du+b"
-export PAGER="less"
-
-# ======== MAKE TERMINAL FASTER ========
-export PROMPT_COMMAND='history -a'         # Write history after every command
-export TIMEFMT=$'\nreal\t%E\nuser\t%U\nsys\t%S'  # Better time formatting
-
-export PATH=$PATH:~/.spoofdpi/bin:~/.local/bin
-
-test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
-
-# Unset color overrides only if eza theme exists and is non-empty
-if [ -s "$HOME/.config/eza/theme.yml" ]; then
-    unset LS_COLORS
-    unset EZA_COLORS
-    unset EXA_COLORS
-fi
 
 # Conditional autoload of python venv in some folders
 if (( $+functions[manage_pro_venv] )); then
