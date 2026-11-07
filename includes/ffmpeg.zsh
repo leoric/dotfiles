@@ -104,14 +104,16 @@ _ff_parse_time() {
   fi
 }
 
-# -> src_codec, src_h, src_br, fps (+ fps=30 в vf_stack)
+# -> src_codec, src_w, src_h, src_short, src_br, fps (+ fps=30 в vf_stack)
 _ff_probe() {
   local probe
   probe=$(ffprobe -v error -select_streams v:0 \
-    -show_entries stream=codec_name,height,bit_rate,r_frame_rate \
+    -show_entries stream=codec_name,width,height,bit_rate,r_frame_rate \
     -of default=nw=1 "$input_file")
   src_codec=$(awk -F= '$1=="codec_name"{print $2; exit}' <<< "$probe")
+  src_w=$(awk -F= '$1=="width"{print $2; exit}' <<< "$probe")
   src_h=$(awk -F= '$1=="height"{print $2; exit}' <<< "$probe")
+  src_short=$(( src_w < src_h ? src_w : src_h ))
   src_br=$(awk -F= '$1=="bit_rate"{print $2; exit}' <<< "$probe")
   fps=$(awk -F= '$1=="r_frame_rate"{print $2; exit}' <<< "$probe" \
         | awk -F'/' '{ if ($2) print $1/$2; else print $1 }')
@@ -130,7 +132,7 @@ _ff_parse_flags() {
     case "$1" in
       264) use264=1; vf_flag=0 ;;
       720) use720=1; vf_flag=0
-           vf_stack+=("scale='if(gt(ih,720),-1,iw)':'if(gt(ih,720),720,ih)'") ;;
+           vf_stack+=("scale=w='if(lt(iw,ih),min(720,iw),-2)':h='if(lt(iw,ih),-2,min(720,ih))'") ;;
       -q)  if [[ -z "$2" || "$2" == -* ]]; then
              echo "ff: -q requires a value" >&2; return 1
            fi
@@ -176,7 +178,7 @@ _ff_pick_quality() {
     codec+=(-q:v "$q"); return 0
   fi
 
-  if [[ ! "$src_br" =~ ^[0-9]+$ || ! "$src_h" =~ ^[0-9]+$ ]]; then
+  if [[ ! "$src_br" =~ ^[0-9]+$ || ! "$src_short" =~ ^[0-9]+$ ]]; then
     if [[ $enc == hevc ]]; then
       echo "ff: couldn't read source bitrate, falling back to -q:v 50" >&2
       codec+=(-q:v 50); return 0
@@ -188,10 +190,10 @@ _ff_pick_quality() {
   local factor=1
   [[ $enc == hevc ]] && factor=0.65
 
-  # поправка на число пикселей после масштабирования до 720
+  # поправка на число пикселей после масштабирования до 720 (по короткой стороне)
   local ratio=1
-  if (( use720 && src_h > 720 )); then
-    ratio=$(awk -v h="$src_h" 'BEGIN{ r=720/h; printf "%.6f", r*r }')
+  if (( use720 && src_short > 720 )); then
+    ratio=$(awk -v s="$src_short" 'BEGIN{ r=720/s; printf "%.6f", r*r }')
   fi
 
   local kbps
@@ -204,7 +206,7 @@ ff() {
   local input_file="$1"; shift
   local -a codec=() vf_stack=() extra_args=()
   local start_mark="" end_mark="" to_flag=0 q="" use264=0 use720=0
-  local src_codec src_h src_br fps enc out_ext consumed
+  local src_codec src_w src_h src_short src_br fps enc out_ext consumed
 
   _ff_parse_time "$@"; shift $consumed
   _ff_probe
