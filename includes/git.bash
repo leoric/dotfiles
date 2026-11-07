@@ -27,13 +27,15 @@ alias gca='git commit -v -a'
 alias gca!='git commit -v -a --amend'
 alias gcan!='git commit -v -a --no-edit --amend'
 alias gcans!='git commit -v -a -s --no-edit --amend'
-alias gcb='git checkout -b'
+alias gco='git checkout'
+alias gsw='git switch'
+alias gsc='git switch -c'
+alias gsm='git switch main'
 alias gcf='git config --list'
 alias gcl='git clone --recursive'
 alias gclean='git clean -fd'
 alias gpristine='git reset --hard && git clean -dfx'
-alias gcm='git checkout main'
-alias gco='git checkout'
+
 alias gcount='git shortlog -sn'
 alias gcp='git cherry-pick'
 
@@ -113,7 +115,6 @@ alias grv='git remote -v'
 
 alias gs='git status'
 alias gss='git status -s' # short
-alias gsb='git status -sb' # short with branch
 
 alias gsh='git show'
 alias gsps='git show --pretty=short --show-signature'

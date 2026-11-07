@@ -85,9 +85,7 @@ if [ -n "$ZSH_VERSION" ]; then
     alias -g UC='| iconv -c -f utf8 -t cp1251'
 fi
 
-srv () {
-        _ /etc/init.d/$1 $2
-}
+alias venv='source ~/py.env/bin/activate'
 
 # Open Sublime Text
 subl() {

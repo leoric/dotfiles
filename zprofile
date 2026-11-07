@@ -34,6 +34,7 @@ typeset -U path
 path=(
   "$HOME/.spoofdpi/bin"
   "$HOME/.local/bin"
+  "$HOME/MEGA/IT/bin"
   $path
 )
 

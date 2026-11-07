@@ -1,0 +1,1 @@
+CORRECT_IGNORE_FILE='.build'
