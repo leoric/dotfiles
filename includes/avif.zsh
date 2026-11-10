@@ -143,17 +143,20 @@ avs() {
     fi
 
     local _av_score=""
+    local _av_encoded=0   # set to 1 once avifenc succeeded for the latest test
 
     _av_encode_test() {
         local q="$1"
         local avif="$work/test-${q}.avif"
         local decoded="$work/test-${q}.png"
 
+        _av_encoded=0
         if ! avifenc --qcolor "$q" --qalpha "$q" -s "$SPEED" "$reference" "$avif" \
             >"$work/avifenc-${q}.log" 2>&1
         then
             return 1
         fi
+        _av_encoded=1
 
         if ! magick "$avif" "$decoded" >"$work/decode-${q}.log" 2>&1; then
             return 1
@@ -164,15 +167,15 @@ avs() {
     }
 
     local low=$MIN_Q high=$MAX_Q best=0 best_score=""
+    local search_ok=1
 
     if ! _av_encode_test "$MAX_Q"; then
-        echo "avs: quality test failed at q=$MAX_Q" >&2
-        unfunction _av_encode_test 2>/dev/null
-        rm -rf "$work"
-        return 1
-    fi
-
-    if awk -v s="$_av_score" -v t="$TARGET_SCORE" 'BEGIN { exit !(s >= t) }'; then
+        search_ok=0
+        best="$MAX_Q"
+        best_score="n/a"
+        printf '\e[1;31mavs: WARNING: quality test failed at q=%s -- using q=%s, no quality check performed\e[0m\n' \
+            "$MAX_Q" "$MAX_Q" >&2
+    elif awk -v s="$_av_score" -v t="$TARGET_SCORE" 'BEGIN { exit !(s >= t) }'; then
         best="$MAX_Q"
         best_score="$_av_score"
 
@@ -197,12 +200,21 @@ avs() {
     else
         best="$MAX_Q"
         best_score="$_av_score"
-        echo "avs: WARNING: SSIMULACRA2 $best_score < target $TARGET_SCORE at q=100 (using q=100 anyway)" >&2
+        echo "avs: WARNING: SSIMULACRA2 $best_score < target $TARGET_SCORE at q=$MAX_Q (using q=$MAX_Q anyway)" >&2
     fi
 
     unfunction _av_encode_test 2>/dev/null
 
-    if ! avifenc --qcolor "$best" --qalpha "$best" -s "$SPEED" "$reference" "$output_name.avif" \
+    local pre="$work/test-${MAX_Q}.avif"
+
+    if (( ! search_ok )) && (( _av_encoded )) && [[ -s "$pre" ]]; then
+        # avifenc already produced a valid q=MAX_Q file; only decode/scoring failed
+        if ! cp "$pre" "$output_name.avif"; then
+            echo "avs: could not copy existing AVIF to $output_name.avif" >&2
+            rm -rf "$work"
+            return 1
+        fi
+    elif ! avifenc --qcolor "$best" --qalpha "$best" -s "$SPEED" "$reference" "$output_name.avif" \
         >"$work/final.log" 2>&1
     then
         echo "avs: final AVIF encoding failed" >&2
