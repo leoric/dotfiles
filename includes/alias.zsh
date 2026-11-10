@@ -1,5 +1,7 @@
 alias alais='alias'
 alias ag='alias | grep'
+alias vim='nvim'
+alias vi='nvim'
 
 if command -v eza >/dev/null 2>&1; then
     # eza aliases
