@@ -9,7 +9,7 @@ hcgraf/zsh-sudo
 jreese/zsh-titles
 
 # Desktop notifications for long-running commands in ZSH
-MichaelAquilina/zsh-auto-notify
+MichaelAquilina/zsh-auto-notify conditional:is_supported_os
 
 # Type p10k configure to access the builtin configuration wizard
 romkatv/powerlevel10k

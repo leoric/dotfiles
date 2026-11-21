@@ -14,6 +14,13 @@ export ANTHROPIC_BASE_URL="co.agentrouter.org"
 export TIMEFMT=$'\nreal\t%E\nuser\t%U\nsys\t%S'  # Better time formatting
 export BLOCK_SIZE=human-readable
 
+# Aliases and other sources
+if [ -d $HOME/.zsh_includes ]; then
+  for file in $HOME/.zsh_includes/*.*sh; do
+    [ -f "$file" ] && source "$file"
+  done
+fi
+
 # Antidote plugin manager
 if [[ ! -d $HOME/.antidote ]]; then
   git clone --depth=1 https://github.com/mattmc3/antidote.git $HOME/.antidote
@@ -95,13 +102,6 @@ FZF-EOF"
   export FZF_DEFAULT_COMMAND='ag -l -g ""'
   #export FZF_DEFAULT_OPTS='--multi'
   export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border"
-fi
-
-# Aliases and other sources
-if [ -d $HOME/.zsh_includes ]; then
-  for file in $HOME/.zsh_includes/*.*sh; do
-    [ -f "$file" ] && source "$file"
-  done
 fi
 
 # Terminal and keybinding settings

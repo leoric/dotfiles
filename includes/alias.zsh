@@ -36,11 +36,15 @@ fi
 alias _='sudo'
 alias please='sudo'
 alias cpr='cp -r'
-alias rmr='rm -r'
 alias cps='_ cp -r'
 alias rms='_ rm -r'
 alias mvs='_ mv'
 alias vis='_ vim'
+
+alias bi='brew install'
+alias br='brew remove'
+alias bd='brew doctor'
+alias bc='brew cleanup --prune=all'
 
 alias apti='_ apt install'
 alias aptu='_ apt update'

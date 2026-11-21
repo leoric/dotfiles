@@ -3,6 +3,55 @@ png() {
     dwebp "$1" -o "$(basename "$1" .webp).png"
 }
 
+# Identifies read-only files before deletion.
+# Deletes writable files automatically.
+# If there are multiple read-only files, displays their paths and asks for confirmation once.
+# Deletes read-only files only if you confirm.
+# Leaves read-only files untouched if you decline.
+rmr() {
+    emulate -L zsh
+    setopt local_options null_glob
+
+    if (( $# == 0 )); then
+        print -u2 "Usage: rmr <file-or-directory> [...]"
+        return 2
+    fi
+
+    local -a ro_files all_files
+    local f answer
+
+    # Scan only; delete nothing yet.
+    while IFS= read -r -d '' f; do
+        all_files+=("$f")
+        [[ ! -L "$f" && ! -w "$f" ]] && ro_files+=("$f")
+    done < <(command find "$@" ! -type d -print0 2>/dev/null)
+
+    # 0 or 1 read-only files: standard rm behavior (its own prompt).
+    if (( ${#ro_files} <= 1 )); then
+        command rm -r -- "$@"
+        return
+    fi
+
+    # Several read-only files: ask once.
+    print
+    print "Read-only files found (${#ro_files}):"
+    printf '  %s\n' "${ro_files[@]}"
+
+    printf "\nDelete all read-only files? [y/N] "
+    read -r answer
+
+    if [[ "$answer" == [yY] ]]; then
+        command chmod -R -- u+w "$@" &&
+            command rm -rf -- "$@"
+    else
+        # Delete only the writable files, keep read-only ones.
+        for f in "${all_files[@]}"; do
+            [[ -L "$f" || -w "$f" ]] && command rm -f -- "$f"
+        done
+        command find "$@" -depth -type d -empty -delete 2>/dev/null
+        print "Read-only files preserved."
+    fi
+}
 function manage_pro_venv() {
     if [[ "$PWD" != "$PRO_PROJECT_ROOT" && "$PWD" != "$PRO_PROJECT_ROOT"/* ]]; then
         if [[ "${VIRTUAL_ENV:-}" == "$PRO_VENV" ]]; then
@@ -145,4 +194,18 @@ vibe_advance() {
     fi
 
     echo "Successfully committed and tagged as v$NEW_VERSION"
+}
+
+brew() {
+    if [[ "$1" == "isntall" ]]; then
+        shift
+        command brew install "$@"
+    else
+        command brew "$@"
+    fi
+}
+
+is_supported_os() {
+  [[ "$OSTYPE" == linux* || "$OSTYPE" == darwin* ]] &&
+    ! { [[ "$OSTYPE" == linux* ]] && grep -qi microsoft /proc/version 2>/dev/null; }
 }
