@@ -107,7 +107,7 @@ fi
 # Terminal and keybinding settings
 case $TERM in
   *xterm*)
-    bindkey "^[[3$HOME" delete-char
+    bindkey "^[[3~" delete-char
     bindkey "^[a" beginning-of-line
     bindkey "^[^B" beginning-of-line
     bindkey "^[[1;5D" beginning-of-line

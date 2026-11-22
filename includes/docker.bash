@@ -9,7 +9,7 @@ dc() {
     else
         DOCKER_COMPOSE="./docker-local/docker-compose.yml"
     fi
-    
+
     if [ ! -f ./docker-compose.yml ] && [ -f "$DOCKER_COMPOSE" ] ; then
         docker-compose -f "$DOCKER_COMPOSE" "$@"
     else
@@ -40,7 +40,7 @@ dce() {
             dc exec -u www-data php php -d xdebug.mode='off' /opt/composer.phar dumpautoload "${@:2}"
         ;;
         u)
-            dc exec -u www-data php php -d xdebug.mode='off' bin/phpunit"${@:2}"
+            dc exec -u www-data php php -d xdebug.mode='off' bin/phpunit "${@:2}"
         ;;
         c)
             dc exec -u www-data php php -d xdebug.mode='off' bin/console "${@:2}"
