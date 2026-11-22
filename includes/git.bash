@@ -39,13 +39,9 @@ alias gpristine='git reset --hard && git clean -dfx'
 alias gcount='git shortlog -sn'
 alias gcp='git cherry-pick'
 
-alias gd='git diff'
-alias gdl='git diff HEAD~1 HEAD'
-alias gdf='git diff --name-status'
-alias gds='git diff --staged'
-alias dct='git describe --tags `git rev-list --tags --max-count=1`'
-alias gdt='git diff-tree --no-commit-id --name-only -r'
-alias gdw='git diff --word-diff'
+alias gd='git diff HEAD' # show both staged and unstaged
+alias gdf='gd --name-status' # shows only status of every file
+alias gdw='gd --word-diff'
 
 alias gf='git fetch --all --prune'
 alias gfa='git fetch --all --prune --tags'
