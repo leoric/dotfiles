@@ -27,15 +27,16 @@ export PAGER="less"
 
 # Project virtual environment configuration
 export PRO_PROJECT_ROOT="$HOME/pro"
-export PRO_VENV="$HOME/py.env"
+export PRO_VENV="$HOME/.venv"
 
 # PATH
 typeset -U path
 path=(
-  "$HOME/.spoofdpi/bin"
-  "$HOME/.local/bin"
-  "$HOME/MEGA/IT/bin"
-  $path
+    "$HOME/.local/bin"
+    "$PRO_VENV/bin"
+    "$HOME/.spoofdpi/bin"
+    "$HOME/MEGA/IT/bin"
+    $path
 )
 
 # Colors: prefer eza theme, otherwise use vivid

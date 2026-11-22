@@ -91,7 +91,8 @@ if [ -n "$ZSH_VERSION" ]; then
     alias -g UC='| iconv -c -f utf8 -t cp1251'
 fi
 
-alias venv='source ~/py.env/bin/activate'
+# Global python environment
+alias venv='source $PRO_VENV/bin/activate'
 
 # Open Sublime Text
 subl() {

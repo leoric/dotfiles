@@ -52,29 +52,6 @@ rmr() {
         print "Read-only files preserved."
     fi
 }
-function manage_pro_venv() {
-    if [[ "$PWD" != "$PRO_PROJECT_ROOT" && "$PWD" != "$PRO_PROJECT_ROOT"/* ]]; then
-        if [[ "${VIRTUAL_ENV:-}" == "$PRO_VENV" ]]; then
-            deactivate
-        fi
-        return
-    fi
-
-    if find "$PWD" \
-        \( -name '.*' -o -name '__pycache__' -o -name 'node_modules' -o -name '.venv' -o -name 'venv' \) -prune \
-        -o -type f -name '*.py' -print -quit 2>/dev/null | grep -q .; then
-        if [[ "${VIRTUAL_ENV:-}" != "$PRO_VENV" ]]; then
-            if (( $+functions[deactivate] )); then
-                deactivate
-            fi
-            source "$PRO_VENV/bin/activate"
-        fi
-    else
-        if [[ "${VIRTUAL_ENV:-}" == "$PRO_VENV" ]]; then
-            deactivate
-        fi
-    fi
-}
 
 vibe_advance() {
     # Emulate standard zsh behavior and isolate options

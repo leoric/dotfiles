@@ -196,7 +196,7 @@ exec zsh
 | `git.bash` | Git aliases (`gst`-style shortcuts, `gds` for `git diff --staged`, ...) |
 | `docker.bash` | `d`, `dc` (picks the compose file by OS), `dcu`, `dcd`, `dce`, ... |
 | `composer.bash` | PHP/Symfony shortcuts (`co`, `ci`, `cr`, `c`, `u`, ...) |
-| `python.zsh` | `py` (auto-activates `~/py.env`), `python3 -m pip install` fallback to brew, then pipx |
+| `python.zsh` | `py` (auto-activates `~/.venv`), `python3 -m pip install` fallback to brew, then pipx |
 | `ffmpeg.zsh` | `fcrop`, `ff1`, `fb` and other ffmpeg helpers |
 | `webp.zsh`, `avif.zsh` | Image conversion helpers (`wp`, `wpr`, `av`) |
 | `factorio.zsh` | Factorio mod tagging/deploy helpers |
@@ -205,7 +205,7 @@ exec zsh
 ## Things to review before using
 
 - **LLM variables in `.zshrc`.** The top of `zshrc-antidote` exports `GEMINI_MODEL`, `ANTHROPIC_MODEL` and `ANTHROPIC_BASE_URL` (pointing at a third-party router). Change or delete these if you don't use that endpoint.
-- **Project paths in `zprofile`.** `PRO_PROJECT_ROOT=$HOME/pro` and `PRO_VENV=$HOME/py.env` drive the automatic virtualenv switching (`manage_pro_venv`, run on every `cd`). Create the venv with `python3 -m venv ~/py.env`, or change the paths.
+- **Project paths in `zprofile`.** `PRO_PROJECT_ROOT=$HOME/pro` and `PRO_VENV=$HOME/.venv` drive the automatic virtualenv switching (`manage_pro_venv`, run on every `cd`). Create the venv with `python3 -m venv ~/.venv`, or change the paths.
 - **`PATH` entries in `zprofile`** (`~/.spoofdpi/bin`, `~/MEGA/IT/bin`) are specific to the original machine. Remove what doesn't exist for you.
 - **`keychain`** is called with `id_rsa`. Change the key name if you use e.g. `id_ed25519`.
 - **Secrets.** Files matching `*secrets*` are git-ignored. Keep tokens in such a file (and source it from `.zshrc`) rather than committing them.
