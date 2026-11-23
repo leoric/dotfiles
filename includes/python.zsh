@@ -1,20 +1,17 @@
 # Automatically use the global Python venv when no venv is active
 function python() {
-    if [[ -z "$VIRTUAL_ENV" && -d "$PRO_VENV" ]]; then
-        "$PRO_VENV/bin/python" "$@"
+    if [[ -z "$VIRTUAL_ENV" && -d "$PYTHON_DEFAULT_VENV" ]]; then
+        "$PYTHON_DEFAULT_VENV/bin/python3" "$@"
     else
-        command python "$@"
+        command python3 "$@"
     fi
-}
-python3() {
-    python "$@"
 }
 
 # - Outside $PRO_PROJECT_ROOT: deactivate any currently active virtual environment.
 # - Inside $PRO_PROJECT_ROOT, but no .py files anywhere under the current directory: deactivate any currently active virtual environment.
 # - Inside $PRO_PROJECT_ROOT, with at least one .py file (including subdirectories):
 #   - If $PWD/.venv exists, activate it.
-#   - Otherwise, activate $PRO_VENV.
+#   - Otherwise, activate $PYTHON_DEFAULT_VENV.
 function manage_pro_venv() {
     # Outside the project root: deactivate any active environment.
     if [[ "$PWD" != "$PRO_PROJECT_ROOT" && "$PWD" != "$PRO_PROJECT_ROOT"/* ]]; then
@@ -35,12 +32,12 @@ function manage_pro_venv() {
         return
     fi
 
-    # Prefer the local .venv if present; otherwise use PRO_VENV.
+    # Prefer the local .venv if present; otherwise use PYTHON_DEFAULT_VENV.
     local target_venv
     if [[ -d "$PWD/.venv" ]]; then
         target_venv="$PWD/.venv"
     else
-        target_venv="$PRO_VENV"
+        target_venv="$PYTHON_DEFAULT_VENV"
     fi
 
     # Activate the target environment only if it isn't already active.

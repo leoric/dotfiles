@@ -27,13 +27,13 @@ export PAGER="less"
 
 # Project virtual environment configuration
 export PRO_PROJECT_ROOT="$HOME/pro"
-export PRO_VENV="$HOME/.venv"
+export PYTHON_DEFAULT_VENV="$HOME/.venv"
 
 # PATH
 typeset -U path
 path=(
     "$HOME/.local/bin"
-    "$PRO_VENV/bin"
+    "$PYTHON_DEFAULT_VENV/bin"
     "$HOME/.spoofdpi/bin"
     "$HOME/MEGA/IT/bin"
     $path

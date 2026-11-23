@@ -100,6 +100,35 @@ pk () {
     fi
 }
 
+# Interactive Git commit history browser using fzf.
+# Displays a colored commit graph with relative timestamps.
+# Press Ctrl-S to toggle sorting and Enter (Ctrl-M) to view
+# the selected commit's full diff in less.
+# Checks for a Git repository and fzf before running.
+glf() {
+    # Check whether we're inside a Git repository
+    if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+        print -P "Not inside a Git repository."
+        return 1
+    fi
+
+    # Check whether fzf is installed
+    if ! command -v fzf &>/dev/null; then
+        print -P "fzf is not installed. Install it first."
+        return 1
+    fi
+
+    git log --graph --color=always \
+        --format="%C(auto)%h%d %s %C(green)%cr%C(reset)" "$@" |
+        fzf --ansi --no-sort --reverse --tiebreak=index \
+            --bind=ctrl-s:toggle-sort \
+            --bind "ctrl-m:execute:
+                (grep -o '[a-f0-9]\{7\}' | head -1 |
+                xargs -I % sh -c 'git show --color=always % | less -R') << 'FZF-EOF'
+                {}
+                FZF-EOF"
+}
+
 vibe_advance() {
     # Emulate standard zsh behavior and isolate options
     emulate -L zsh

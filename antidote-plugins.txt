@@ -3,7 +3,7 @@ djui/alias-tips
 
 # Toggles "sudo" before the current/previous command by pressing [ESC][ESC]
 # inside ohmyzsh/ohmyzsh
-hcgraf/zsh-sudo 
+hcgraf/zsh-sudo
 
 # Automatic terminal and tmux titles based on current location and task.
 jreese/zsh-titles

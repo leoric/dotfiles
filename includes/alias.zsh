@@ -92,7 +92,7 @@ if [ -n "$ZSH_VERSION" ]; then
 fi
 
 # Global python environment
-alias venv='source $PRO_VENV/bin/activate'
+alias venv='source $PYTHON_DEFAULT_VENV/bin/activate'
 
 # Open Sublime Text
 subl() {
