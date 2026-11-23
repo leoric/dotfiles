@@ -151,9 +151,9 @@ vibe_advance() {
 
         MANUAL_VERSION="${m_major}.${m_minor}.${m_patch}"
 
-        if git tag --list "v$MANUAL_VERSION" | grep -Fxq "v$MANUAL_VERSION" || \
-           git tag --list "$MANUAL_VERSION" | grep -Fxq "$MANUAL_VERSION" || \
-           git log --all --format='%s' | grep -Fxq "$MANUAL_VERSION"; then
+        if git show-ref --verify --quiet "refs/tags/v$MANUAL_VERSION" \
+           || git show-ref --verify --quiet "refs/tags/$MANUAL_VERSION" \
+           || git log --all --format='%s' | grep -Fxq -- "$MANUAL_VERSION"; then
             echo "Error: Version $MANUAL_VERSION already exists in Git history (as a tag or commit subject)!"
             return 1
         fi
