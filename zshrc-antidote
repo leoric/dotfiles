@@ -83,6 +83,17 @@ zmodload zsh/terminfo # exposes terminal capabilities as shell parameters
 bindkey "$terminfo[kcuu1]" history-substring-search-up
 bindkey "$terminfo[kcud1]" history-substring-search-down
 
+# Expand aliases when pressing Space
+globalias() {
+  if [[ $LBUFFER =~ '(^|[[:space:]])[A-Za-z0-9_-]+$' ]]; then
+    zle _expand_alias
+  fi
+  zle self-insert
+}
+
+zle -N globalias
+bindkey ' ' globalias
+
 # Load FZF if available
 if command -v fzf >/dev/null 2>&1; then
     # Initialize fzf
