@@ -1,6 +1,4 @@
 *.bak
 *.html
 *.pdf
-*.swp
 *secrets*
-*.~un
