@@ -1,6 +1,6 @@
 # zsh config
 
-Personal zsh setup built around [Antidote](https://github.com/mattmc3/antidote) (plugin manager) and [Powerlevel10k](https://github.com/romkatv/powerlevel10k) (prompt), with aliases and helper functions split into small files under `includes/`.
+Personal zsh setup built around [Antidote](https://github.com/mattmc3/antidote) (plugin manager) and [Starship](https://starship.rs) (prompt), with aliases and helper functions split into small files under `includes/`.
 
 Works on macOS and Linux. Some helpers are macOS-only (see [Platform notes](#platform-notes)).
 
@@ -12,9 +12,11 @@ Works on macOS and Linux. Some helpers are macOS-only (see [Platform notes](#pla
 | `zprofile` | `~/.zprofile` | Login-shell env: Homebrew, locale, history size, pager, `PATH`, `LS_COLORS` |
 | `antidote-plugins.txt` | `~/.zsh_plugins.txt` | Plugin list that Antidote bundles |
 | `includes/` | `~/.zsh_includes` | Aliases and functions, sourced automatically |
-| `tmux.conf` | `~/.tmux.conf` | Optional tmux config (Solarized colours) |
+| `tmux.conf` | `~/.tmux.conf` | Optional tmux config (Solarized colours), `install.sh --tmux` |
+| `nvimrc` | `~/.config/nvim/init.vim` | Optional Neovim config, `install.sh --nvim` |
+| `install.sh` | n/a | Creates the symlinks above |
 
-> The names differ on purpose: `zshrc-antidote` and `antidote-plugins.txt` are not hidden files in the repo, but zsh expects `~/.zshrc` and the config expects `~/.zsh_plugins.txt`. The symlinks below handle the renaming.
+> The names differ on purpose: `zshrc-antidote` and `antidote-plugins.txt` are not hidden files in the repo, but zsh expects `~/.zshrc` and the config expects `~/.zsh_plugins.txt`. `install.sh` handles the renaming.
 
 ## Installation
 
@@ -25,6 +27,7 @@ Required:
 - `zsh` (set as your login shell: `chsh -s "$(command -v zsh)"`)
 - `git` (used to auto-install Antidote)
 - [`zoxide`](https://github.com/ajeetdsouza/zoxide). `.zshrc` runs `zoxide init` unconditionally, so shell startup prints an error without it.
+- [`starship`](https://starship.rs) for the prompt. If it is missing, `.zshrc` skips it and you get the plain zsh prompt.
 
 Recommended (everything degrades gracefully unless noted):
 
@@ -34,19 +37,20 @@ Recommended (everything degrades gracefully unless noted):
 - `fzf` and `ag` (the silver searcher), used by the fzf block and `fshow`
 - `vivid` for `LS_COLORS` (only used when no eza theme exists)
 - `keychain` for SSH agent handling
-- A [Nerd Font](https://www.nerdfonts.com/) in your terminal, so Powerlevel10k and eza icons render
+- A [Nerd Font](https://www.nerdfonts.com/) in your terminal, so Starship and eza icons render
 
 macOS:
 
 ```sh
-brew install zsh git zoxide eza neovim fzf the_silver_searcher vivid keychain
+brew install zsh git zoxide starship eza neovim fzf the_silver_searcher vivid keychain
 ```
 
 Debian/Ubuntu:
 
 ```sh
 sudo apt install zsh git fzf silversearcher-ag keychain neovim
-# zoxide, eza and vivid: install from their own releases or your preferred package source
+# starship, zoxide, eza and vivid: install from their own releases or your preferred package source
+# (starship: curl -sS https://starship.rs/install.sh | sh)
 ```
 
 ### 2. Clone the repo
@@ -60,27 +64,26 @@ cd ~/zsh
 
 The examples below use `~/zsh`. Adjust if you cloned elsewhere.
 
-### 3. Back up existing files
-
-`ln -s` will not overwrite existing files, so move them out of the way first:
+### 3. Run the installer
 
 ```sh
-for f in .zshrc .zprofile .zsh_plugins.txt .zsh_includes .tmux.conf; do
-  [ -e ~/"$f" ] || [ -L ~/"$f" ] && mv ~/"$f" ~/"$f".bak
-done
+./install.sh
 ```
 
-(`*.bak` is already in `.gitignore`.)
+This symlinks the files from the table above into your home directory:
 
-### 4. Create the symlinks
-
-```sh
-ln -s ~/zsh/zshrc-antidote      ~/.zshrc
-ln -s ~/zsh/zprofile            ~/.zprofile
-ln -s ~/zsh/antidote-plugins.txt ~/.zsh_plugins.txt
-ln -s ~/zsh/includes            ~/.zsh_includes
-ln -s ~/zsh/tmux.conf           ~/.tmux.conf   # optional
 ```
+~/.zshrc           -> ~/zsh/zshrc-antidote
+~/.zprofile        -> ~/zsh/zprofile
+~/.zsh_plugins.txt -> ~/zsh/antidote-plugins.txt
+~/.zsh_includes    -> ~/zsh/includes
+```
+
+- Existing files are moved to `<name>.bak` first (`<name>.bak.<timestamp>` if a `.bak` already exists), so nothing is lost.
+- It is safe to run again. Links that already point into the repo are left untouched.
+- `./install.sh --tmux` and `./install.sh --nvim` also link `tmux.conf` and `nvimrc`.
+- `./install.sh --dry-run` prints what would happen without changing anything.
+- It warns about missing `zsh`, `git`, `starship` and `zoxide`, but does not install them.
 
 Verify:
 
@@ -92,12 +95,12 @@ Each should show `->` pointing into `~/zsh`.
 
 #### Symlinking includes: whole directory vs. per file
 
-The command above links the **entire `includes/` directory** as `~/.zsh_includes`. This is the simplest option, and new files you add to the repo are picked up automatically.
+`install.sh` links the **entire `includes/` directory** as `~/.zsh_includes`. This is the simplest option, and new files you add to the repo are picked up automatically.
 
-If you only want some of the includes on a given machine (for example, skip `factorio.zsh` and `avif.zsh` on a server), create a real directory and link just the files you want:
+If you only want some of the includes on a given machine (for example, skip `factorio.zsh` and `avif.zsh` on a server), run `install.sh` first, then replace the `~/.zsh_includes` link with a real directory containing links to just the files you want:
 
 ```sh
-mkdir -p ~/.zsh_includes
+rm ~/.zsh_includes && mkdir ~/.zsh_includes
 cd ~/zsh/includes
 for f in alias.zsh functions.zsh git.bash docker.bash python.zsh nocorrect.zsh; do
   ln -sf "$PWD/$f" ~/.zsh_includes/"$f"
@@ -117,7 +120,7 @@ done
 - Anything not ending in `sh` is ignored (e.g. the editor undo file `.alias.zsh.un~`).
 - The includes are sourced **before** Antidote loads. This matters: `is_supported_os` (defined in `functions.zsh`) is used by the `conditional:is_supported_os` rule in the plugin list. Don't remove `functions.zsh` or reorder the blocks without accounting for that.
 
-### 5. Install Antidote and the plugins
+### 4. Install Antidote and the plugins
 
 Nothing to do manually. On first launch, `.zshrc` will:
 
@@ -137,15 +140,26 @@ To install Antidote ahead of time instead:
 git clone --depth=1 https://github.com/mattmc3/antidote.git ~/.antidote
 ```
 
-### 6. Configure the prompt
+### 5. Configure the prompt
 
-On first start Powerlevel10k will launch its configuration wizard. If it doesn't, run:
+Starship works out of the box with its defaults. To customise it, create `~/.config/starship.toml` (machine-specific, not tracked in this repo). You can start from a preset:
 
 ```sh
-p10k configure
+starship preset catppuccin-powerline -o ~/.config/starship.toml
 ```
 
-This writes `~/.p10k.zsh`, which `.zshrc` sources automatically. It is machine-specific and not tracked in this repo.
+See the [Starship docs](https://starship.rs/config/) and `starship preset --list` for options.
+
+#### Migrating from Powerlevel10k
+
+The `romkatv/powerlevel10k` plugin and the `~/.p10k.zsh` hook are gone from the repo. After pulling, rebuild the plugin bundle and clean up the leftovers if you want:
+
+```sh
+rm -f ~/.zsh_plugins.zsh ~/.p10k.zsh ~/.cache/p10k-*
+exec zsh
+```
+
+Antidote's local clone of the plugin can be removed with `antidote purge romkatv/powerlevel10k`.
 
 ## Day-to-day usage
 
@@ -179,7 +193,6 @@ exec zsh
 | `hcgraf/zsh-sudo` | Press `Esc Esc` to prefix the command with `sudo` |
 | `jreese/zsh-titles` | Terminal/tmux titles from location and task |
 | `MichaelAquilina/zsh-auto-notify` | Desktop notifications for long commands (only when `is_supported_os`, i.e. macOS or non-WSL Linux) |
-| `romkatv/powerlevel10k` | Prompt theme |
 | `yous/vanilli.sh` | Minimal sensible defaults |
 | `zlsun/solarized-man` | Coloured man pages |
 | `zsh-users/zsh-autosuggestions` | Fish-style suggestions |
@@ -221,7 +234,7 @@ exec zsh
 ## Uninstall
 
 ```sh
-rm ~/.zshrc ~/.zprofile ~/.zsh_plugins.txt ~/.zsh_includes ~/.tmux.conf
+rm ~/.zshrc ~/.zprofile ~/.zsh_plugins.txt ~/.zsh_includes ~/.tmux.conf ~/.config/nvim/init.vim
 rm -rf ~/.antidote ~/.zsh_plugins.zsh
 # restore backups if you made them
 for f in ~/.zshrc.bak ~/.zprofile.bak; do [ -e "$f" ] && mv "$f" "${f%.bak}"; done
@@ -233,4 +246,6 @@ for f in ~/.zshrc.bak ~/.zprofile.bak; do [ -e "$f" ] && mv "$f" "${f%.bak}"; do
 - **Aliases/functions missing.** Check `ls -l ~/.zsh_includes`: the link must exist and not be broken, and filenames must end in `sh`.
 - **Plugins not loading after editing the list.** Make sure `~/.zsh_plugins.txt` is a working symlink; if not, delete `~/.zsh_plugins.zsh` and run `exec zsh`.
 - **Broken icons in prompt or `ls`.** Set a Nerd Font in your terminal profile.
+- **Plain prompt, no Starship.** Check `command -v starship`; `.zshrc` silently skips it when the binary is missing.
+- **`install.sh` reports a backup.** That is expected: your previous file was moved to `<name>.bak` in `~`.
 - **Slow first start.** Antidote is cloning all plugins; later starts use the cached `~/.zsh_plugins.zsh`.

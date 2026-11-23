@@ -1,8 +1,3 @@
-# Enable Powerlevel10k instant prompt
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
-
 # LLM
 export GEMINI_MODEL="gemini-3.6-flash"
 export GO_GEMINI_MODEL="gemini-3.6-flash"
@@ -51,8 +46,10 @@ zstyle ':completion:*' menu select=2
 zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
 zmodload zsh/complist
 
-# Powerlevel10k theme
-[[ ! -f $HOME/.p10k.zsh ]] || source $HOME/.p10k.zsh
+# Starship prompt (config: ~/.config/starship.toml)
+if command -v starship &>/dev/null; then
+  eval "$(starship init zsh)"
+fi
 
 # Init zoxide (jump)
 eval "$(zoxide init zsh)"
