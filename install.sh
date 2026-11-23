@@ -25,6 +25,7 @@ Symlinks into \$HOME:
   zprofile              -> ~/.zprofile
   antidote-plugins.txt  -> ~/.zsh_plugins.txt
   includes/             -> ~/.zsh_includes
+  starship.toml         -> ~/.config/starship.toml
 
 Options:
   --tmux      also link tmux.conf -> ~/.tmux.conf
@@ -50,6 +51,7 @@ LINKS=(
   "zprofile:.zprofile"
   "antidote-plugins.txt:.zsh_plugins.txt"
   "includes:.zsh_includes"
+  "starship.toml:.config/starship.toml"
 )
 if [ "$WITH_TMUX" = 1 ]; then
   LINKS+=("tmux.conf:.tmux.conf")
