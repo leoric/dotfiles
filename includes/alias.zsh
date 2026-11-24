@@ -54,9 +54,9 @@ alias aptp='_ apt purge'
 
 alias h='history'
 alias grep='grep -E'
-alias cal='cal -m'
 alias df='df -h'
 alias du='du -h'
+alias cal='cal -m' # calendar shows month
 
 alias tm='tmux'
 alias tma='tm att -t'
@@ -66,14 +66,12 @@ alias psg='ps aux | grep'
 
 alias fp='ffprobe'
 alias dv='yt-dlp'
-alias commit='commit --timeout 30s'
 
 if [ -n "$ZSH_VERSION" ]; then
-    alias zmv='noglob zmv'
+    alias mmv='noglob zmv -W' # `mmv *.jpg *.jpeg`, while zmv is `zmv '(*) - (*).png' '$2 - $1.png'`
 
     alias -g F='--filter'
     alias -g T='--testdox'
-    alias -g C='|ccze'
     alias -g M='|more'
     alias -g L='|less'
     alias -g H='|head'
@@ -84,11 +82,24 @@ if [ -n "$ZSH_VERSION" ]; then
     alias -g GN='|grep -n'
     alias -g S='|sort'
     alias -g SU='|sort -u'
+    alias -g C='|pbcopy' # copy to clipboard
 
     alias -g KU='| iconv -c -f koi8r -t utf8'
     alias -g CU='| iconv -c -f cp1251 -t utf8'
     alias -g UK='| iconv -c -f utf8 -t koi8r'
     alias -g UC='| iconv -c -f utf8 -t cp1251'
+
+    alias -s yaml='bat --language=yaml'
+    alias -s toml='bat --language=toml'
+    alias -s json='jless'
+    alias -s md='glow'
+    alias -s mp4='open'
+    alias -s mkv='open'
+    alias -s png='open'
+    alias -s jpg='open'
+    alias -s jpeg='open'
+    alias -s webp='open'
+    alias -s avif='open'
 fi
 
 # Global python environment
@@ -97,4 +108,9 @@ alias venv='source $PYTHON_DEFAULT_VENV/bin/activate'
 # Open Sublime Text
 subl() {
     /Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl "$@"
+}
+
+# Change dir and list
+cl() {
+    cd "$@" && l
 }

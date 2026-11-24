@@ -257,8 +257,3 @@ brew() {
         command brew "$@"
     fi
 }
-
-is_supported_os() {
-  [[ "$OSTYPE" == linux* || "$OSTYPE" == darwin* ]] &&
-    ! { [[ "$OSTYPE" == linux* ]] && grep -qi microsoft /proc/version 2>/dev/null; }
-}

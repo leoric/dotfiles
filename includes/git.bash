@@ -1,3 +1,4 @@
+bindkey -s '^Xgc' 'git commit -m ""\C-b' # Ctrl+X,g,c puts git commit -m "" into input, with cursor inside ""
 alias g='git'
 
 alias ga='git add'

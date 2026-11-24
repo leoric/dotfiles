@@ -9,22 +9,28 @@ hcgraf/zsh-sudo
 jreese/zsh-titles
 
 # Desktop notifications for long-running commands in ZSH
-MichaelAquilina/zsh-auto-notify conditional:is_supported_os
+MichaelAquilina/zsh-auto-notify conditional:_is_supported_os
 
 # Minimal config
 yous/vanilli.sh
 
 # A modified version of oh-my-zsh's plugin colored-man-pages, optimized for solarized dark theme in terminal
-zlsun/solarized-man
-
-# Fish-like fast/unobtrusive autosuggestions for zsh. Suggests commands as you type based on history and completions
-zsh-users/zsh-autosuggestions
+#zlsun/solarized-man
 
 # Additional completion definitions
-zsh-users/zsh-completions
+zsh-users/zsh-completions path:src kind:fpath
 
-# This is a clean-room implementation of the Fish shell's history search feature, where you can type in any part of any command from history and then press chosen keys, such as the UP and DOWN arrows, to cycle through matches
-zsh-users/zsh-history-substring-search
+# Initialize compinit via antidote's autoload helper
+belak/zsh-utils path:completion
+
+# Load fzf-tab AFTER compinit, BEFORE autosuggestions/syntax-highlighting
+Aloxaf/fzf-tab
+
+# Fish-like autosuggestions for zsh. Suggests commands as you type based on history and completions
+zsh-users/zsh-autosuggestions
 
 # Fish shell-like syntax highlighting
 zsh-users/zsh-syntax-highlighting
+
+# This is a clean-room implementation of the Fish shell's history search feature, where you can type in any part of any command from history and then press chosen keys, such as the UP and DOWN arrows, to cycle through matches
+zsh-users/zsh-history-substring-search
