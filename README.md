@@ -1,6 +1,6 @@
 # zsh config
 
-Personal zsh setup built around [Antidote](https://github.com/mattmc3/antidote) (plugin manager) and [Starship](https://starship.rs) (prompt), with aliases and helper functions split into small files under `includes/`.
+Personal zsh setup built around [Antidote](https://github.com/mattmc3/antidote) (plugin manager) and [Powerlevel10k](https://github.com/romkatv/powerlevel10k) (prompt), with aliases and helper functions split into small files under `includes/`.
 
 Works on macOS and Linux. Some helpers are macOS-only (see [Platform notes](#platform-notes)).
 
@@ -12,7 +12,7 @@ Works on macOS and Linux. Some helpers are macOS-only (see [Platform notes](#pla
 | `zprofile` | `~/.zprofile` | Login-shell env: Homebrew, locale, history size, pager, `PATH`, `LS_COLORS` |
 | `antidote-plugins.txt` | `~/.zsh_plugins.txt` | Plugin list that Antidote bundles |
 | `includes/` | `~/.zsh_includes` | Aliases and functions, sourced automatically |
-| `starship.toml` | `~/.config/starship.toml` | Prompt config, ported from the old Powerlevel10k setup |
+| `p10k.zsh` | `~/.p10k.zsh` | Prompt config for Powerlevel10k |
 | `tmux.conf` | `~/.tmux.conf` | Optional tmux config (Solarized colours), `install.sh --tmux` |
 | `nvimrc` | `~/.config/nvim/init.vim` | Optional Neovim config, `install.sh --nvim` |
 | `install.sh` | n/a | Creates the symlinks above |
@@ -28,7 +28,6 @@ Required:
 - `zsh` (set as your login shell: `chsh -s "$(command -v zsh)"`)
 - `git` (used to auto-install Antidote)
 - [`zoxide`](https://github.com/ajeetdsouza/zoxide). `.zshrc` runs `zoxide init` unconditionally, so shell startup prints an error without it.
-- [`starship`](https://starship.rs) for the prompt. If it is missing, `.zshrc` skips it and you get the plain zsh prompt.
 
 Recommended (everything degrades gracefully unless noted):
 
@@ -38,20 +37,19 @@ Recommended (everything degrades gracefully unless noted):
 - `fzf` and `ag` (the silver searcher), used by the fzf block and `fshow`
 - `vivid` for `LS_COLORS` (only used when no eza theme exists)
 - `keychain` for SSH agent handling
-- A [Nerd Font](https://www.nerdfonts.com/) in your terminal, so Starship and eza icons render
+- A [Nerd Font](https://www.nerdfonts.com/) in your terminal, so Powerlevel10k and eza icons render
 
 macOS:
 
 ```sh
-brew install zsh git zoxide starship eza neovim fzf the_silver_searcher vivid keychain
+brew install zsh git zoxide eza neovim fzf the_silver_searcher vivid keychain
 ```
 
 Debian/Ubuntu:
 
 ```sh
-sudo apt install zsh git fzf silversearcher-ag keychain neovim
-# starship, zoxide, eza and vivid: install from their own releases or your preferred package source
-# (starship: curl -sS https://starship.rs/install.sh | sh)
+sudo apt install zsh git fzf ripgrep keychain neovim
+# zoxide, eza and vivid: install from their own releases or your preferred package source
 ```
 
 ### 2. Clone the repo
@@ -78,20 +76,19 @@ This symlinks the files from the table above into your home directory:
 ~/.zprofile        -> ~/zsh/zprofile
 ~/.zsh_plugins.txt -> ~/zsh/antidote-plugins.txt
 ~/.zsh_includes    -> ~/zsh/includes
-~/.config/starship.toml -> ~/zsh/starship.toml
+~/.p10k.zsh -> ~/zsh/p10k.zsh
 ```
 
 - Existing files are moved to `<name>.bak` first (`<name>.bak.<timestamp>` if a `.bak` already exists), so nothing is lost.
 - It is safe to run again. Links that already point into the repo are left untouched.
 - `./install.sh --tmux` and `./install.sh --nvim` also link `tmux.conf` and `nvimrc`.
 - `./install.sh --dry-run` prints what would happen without changing anything.
-- The prompt config is shared across machines, so it is tracked and linked like everything else. Edit `starship.toml` in the repo.
-- It warns about missing `zsh`, `git`, `starship` and `zoxide`, but does not install them.
+- It warns about missing `zsh`, `git` and `zoxide`, but does not install them.
 
 Verify:
 
 ```sh
-ls -l ~/.zshrc ~/.zprofile ~/.zsh_plugins.txt ~/.zsh_includes ~/.config/starship.toml
+ls -l ~/.zshrc ~/.zprofile ~/.zsh_plugins.txt ~/.zsh_includes ~/.p10k.zsh
 ```
 
 Each should show `->` pointing into `~/zsh`.
@@ -145,49 +142,13 @@ git clone --depth=1 https://github.com/mattmc3/antidote.git ~/.antidote
 
 ### 5. The prompt
 
-`starship.toml` reproduces the previous Powerlevel10k look (classic style, two lines, sharp powerline arrows, dotted gap) and is linked to `~/.config/starship.toml` by `install.sh`. It needs a Nerd Font in the terminal.
-
-```
- ◀  ▶ ~/dev/repo/src ▶  main !2 ?1 ▶ ·················· ◀ ✘ INT ◀ 3s ◀ .venv ◀ 12:34:56 ▶
-❯
-```
-
-- **Left:** OS icon, directory (parents dimmed, repo root bold, deep paths shortened), git branch with `⇣⇡` ahead/behind, `*` stash, `~` conflicts, `+` staged, `!` unstaged, `?` untracked.
-- **Right:** signal or pipeline failure, command duration (3s and up), background jobs, direnv, Python virtualenv, conda, nix-shell, kubernetes, terraform, aws, `user@host` (SSH or root only), time.
-- **Prompt character:** `❯` green, red after a failed command, `❮`/`V`/`▶` for vi modes.
-
-Colours are the same 256-colour numbers as the old config. See the comments in `starship.toml` for the glyph legend.
-
-To change something, edit `starship.toml` and open a new prompt (Starship reads it on every render). Docs: <https://starship.rs/config/>. For a machine-specific override, point `STARSHIP_CONFIG` at another file (exported before the prompt is initialised) instead of editing the shared one.
-
-#### Differences from Powerlevel10k
-
-Starship cannot do some things p10k did:
-
-- **Git colour.** p10k turned the git segment from green to yellow when the repo had tracked changes. Starship cannot recolour a segment by state, so it stays green and the markers carry the information. Push-remote markers (`⇠⇢`), the `wip` marker and the remote branch name are not shown either.
-- **Right-side arrows.** Each right segment draws its own `◀` head, so neighbours are not fused into one continuous chain as in p10k.
-- **Plain failures.** A non-zero exit only turns the `❯` red, as before. Signals and failed pipelines also get a segment.
-- **Show-on-command segments.** p10k showed kubernetes, aws, terraform, azure and gcloud only while you typed the matching command. Starship has no such trigger: kubernetes appears in directories with `Chart.yaml`, `kustomization.yaml`, etc., terraform in `*.tf` directories, aws when credentials are configured. azure, gcloud, aws elastic beanstalk and google app credentials are not included.
-- **Version managers.** asdf, pyenv, nvm, nodenv, rbenv and friends have no Starship equivalent. Language modules show the active tool version instead. They are not in the prompt; to add one, put it in `format` and (optionally) restyle it in the same way as the others, e.g. for Node:
-
-  ```toml
-  # in `format`, before $time:  $nodejs\
-  [nodejs]
-  format = "[\ue0b2](fg:2)[ $symbol$version ](fg:0 bg:2)"
-  ```
-- **Dropped.** Instant prompt and transient prompt (both off or quiet in the old config), todo, timewarrior, taskwarrior, nordvpn, ranger, yazi, nnn, lf, xplr, vim shell, midnight commander, chezmoi shell, toolbox and per-directory-history.
-- **Duration format** is Starship's (`2m5s`), not `2m 5s`.
-
-#### Migrating from Powerlevel10k
-
-The `romkatv/powerlevel10k` plugin and the `~/.p10k.zsh` hook are gone from the repo. Your old `~/.p10k.zsh` was the source for `starship.toml` and is no longer read. After pulling, run `./install.sh` again so `~/.config/starship.toml` is linked (an existing file there is backed up to `starship.toml.bak`), then rebuild the plugin bundle and clean up the leftovers:
+On first start Powerlevel10k will launch its configuration wizard. If it doesn't, run:
 
 ```sh
-rm -f ~/.zsh_plugins.zsh ~/.p10k.zsh ~/.cache/p10k-*
-exec zsh
+p10k configure
 ```
 
-Antidote's local clone of the plugin can be removed with `antidote purge romkatv/powerlevel10k`.
+This writes `~/.p10k.zsh`, which `.zshrc` sources automatically. It is machine-specific and not tracked in this repo.
 
 ## Day-to-day usage
 
@@ -218,11 +179,9 @@ exec zsh
 | Plugin | What it does |
 |---|---|
 | `djui/alias-tips` | Reminds you of an existing alias for the command you ran |
-| `hcgraf/zsh-sudo` | Press `Esc Esc` to prefix the command with `sudo` |
 | `jreese/zsh-titles` | Terminal/tmux titles from location and task |
-| `MichaelAquilina/zsh-auto-notify` | Desktop notifications for long commands (only when `is_supported_os`, i.e. macOS or non-WSL Linux) |
-| `yous/vanilli.sh` | Minimal sensible defaults |
-| `zlsun/solarized-man` | Coloured man pages |
+| `MichaelAquilina/zsh-auto-notify` | Desktop notifications for long commands |
+| `romkatv/powerlevel10k` | Prompt theme |
 | `zsh-users/zsh-autosuggestions` | Fish-style suggestions |
 | `zsh-users/zsh-completions` | Extra completion definitions |
 | `zsh-users/zsh-history-substring-search` | Up/Down arrows search history by substring |
@@ -241,11 +200,10 @@ exec zsh
 | `ffmpeg.zsh` | `fcrop`, `ff1`, `fb` and other ffmpeg helpers |
 | `webp.zsh`, `avif.zsh` | Image conversion helpers (`wp`, `wpr`, `av`) |
 | `factorio.zsh` | Factorio mod tagging/deploy helpers |
-| `nocorrect.zsh` | `CORRECT_IGNORE_FILE` for `setopt correctall` |
 
 ## Things to review before using
 
-- **LLM variables in `.zshrc`.** The top of `zshrc-antidote` exports `GEMINI_MODEL`, `ANTHROPIC_MODEL` and `ANTHROPIC_BASE_URL` (pointing at a third-party router). Change or delete these if you don't use that endpoint.
+- **LLM variables in `includes/llm.bash`.** . Change or delete these if you don't use that endpoint.
 - **Project paths in `zprofile`.** `PRO_PROJECT_ROOT=$HOME/pro` and `PYTHON_DEFAULT_VENV=$HOME/.venv` drive the automatic virtualenv switching (`manage_pro_venv`, run on every `cd`). Create the venv with `python3 -m venv ~/.venv`, or change the paths.
 - **`PATH` entries in `zprofile`** (`~/.spoofdpi/bin`, `~/MEGA/IT/bin`) are specific to the original machine. Remove what doesn't exist for you.
 - **`keychain`** is called with `id_rsa`. Change the key name if you use e.g. `id_ed25519`.
@@ -254,7 +212,6 @@ exec zsh
 ## Platform notes
 
 - `avif.zsh`, `webp.zsh` need `pbpaste` (macOS). On Linux, alias it to `xclip -o` / `wl-paste` or skip those files.
-- `ff1` uses `h264_videotoolbox` (macOS hardware encoder).
 - `factorio_deploy` uses `osascript` (macOS).
 - `zprofile` only loads Homebrew from `/opt/homebrew` (Apple Silicon). On Intel macOS or Linuxbrew, adjust the path.
 - `tmux.conf` uses options removed in tmux 2.1+ (`mode-mouse`, `status-attr`, `*-fg/-bg`). On a modern tmux, replace them with `set -g mouse on` and the `-style` options.
@@ -262,8 +219,8 @@ exec zsh
 ## Uninstall
 
 ```sh
-rm ~/.zshrc ~/.zprofile ~/.zsh_plugins.txt ~/.zsh_includes ~/.config/starship.toml ~/.tmux.conf ~/.config/nvim/init.vim
-rm -rf ~/.antidote ~/.zsh_plugins.zsh
+rm ~/.zshrc ~/.zprofile ~/.zsh_plugins.txt ~/.p10k.zsh
+rm -rf ~/.antidote ~/.zsh_plugins.zsh ~/.zsh_includes
 # restore backups if you made them
 for f in ~/.zshrc.bak ~/.zprofile.bak; do [ -e "$f" ] && mv "$f" "${f%.bak}"; done
 ```
@@ -275,6 +232,5 @@ for f in ~/.zshrc.bak ~/.zprofile.bak; do [ -e "$f" ] && mv "$f" "${f%.bak}"; do
 - **Plugins not loading after editing the list.** Make sure `~/.zsh_plugins.txt` is a working symlink; if not, delete `~/.zsh_plugins.zsh` and run `exec zsh`.
 - **Broken icons in prompt or `ls`.** Set a Nerd Font in your terminal profile.
 - **Arrows or icons show as boxes.** The prompt uses powerline and Nerd Font glyphs; set a Nerd Font in the terminal profile.
-- **Plain prompt, no Starship.** Check `command -v starship`; `.zshrc` silently skips it when the binary is missing.
 - **`install.sh` reports a backup.** That is expected: your previous file was moved to `<name>.bak` in `~`.
 - **Slow first start.** Antidote is cloning all plugins; later starts use the cached `~/.zsh_plugins.zsh`.

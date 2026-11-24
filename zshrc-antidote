@@ -1,4 +1,8 @@
 # zmodload zsh/zprof    # profiling, see the last line
+# Enable Powerlevel10k instant prompt
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
 
 # Internal function used in conditional plugin load
 _is_supported_os() {
@@ -111,7 +115,7 @@ bindkey '^[OF'  end-of-line                 # END application mode
 bindkey '^[[3~' delete-char                 # DELETE
 bindkey '^[[Z'  reverse-menu-complete       # shift + tab
 bindkey '^U'    backward-kill-line          # ctrl + u
-
+bindkey '^[s'   toggle-sudo                 # alt + s sudo previous command
 ## Terminal-specific
 case $TERM in
   *xterm*)
@@ -132,11 +136,11 @@ bindkey '^[OB' history-substring-search-down    # ↓ application mode
 
 ## Expand aliases when pressing Space
 globalias() {
-    zle magic-space
-
     if [[ $LBUFFER =~ '(^|[[:space:]])[A-Za-z0-9_-]+$' ]]; then
         zle _expand_alias
     fi
+
+    zle magic-space
 }
 zle -N globalias
 bindkey ' ' globalias
@@ -163,8 +167,23 @@ if (( $+functions[manage_pro_venv] )); then
     manage_pro_venv
 fi
 
+# Transient prompt shows time when commands were started
+autoload -Uz add-zle-hook-widget
+function _transient_prompt_with_time() {
+  emulate -L zsh
+  local saved_ps1=$PROMPT saved_rps1=$RPROMPT
+  PROMPT='%F{244}%D{%H:%M:%S}%f %F{green}❯%f '
+  RPROMPT=''
+  zle .reset-prompt
+  PROMPT=$saved_ps1
+  RPROMPT=$saved_rps1
+}
+
+add-zle-hook-widget line-finish _transient_prompt_with_time
+
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 
-eval "$(starship init zsh)"    # Starship prompt (config: ~/.config/starship.toml) goes last
+# Powerlevel10k theme
+[[ ! -f $HOME/.p10k.zsh ]] || source $HOME/.p10k.zsh    # Powerlevel10k theme
 
 # zprof | head -20    # profiling, see the first line
