@@ -1,6 +1,5 @@
-" Symlink or copy this to init.vim in:
-" macOS, Linux ~/.config/nvim/
-" Windows ~/AppData/Local/nvim/
+" Stowed to ~/.config/nvim/init.vim (macOS, Linux).
+" On Windows copy to ~/AppData/Local/nvim/init.vim.
 
 " Core
 set number

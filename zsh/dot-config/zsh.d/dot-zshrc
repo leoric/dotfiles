@@ -1,0 +1,202 @@
+# zmodload zsh/zprof    # profiling, see the last line
+# Enable Powerlevel10k instant prompt
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+# Internal function used in conditional plugin load
+_is_supported_os() {
+  [[ "$OSTYPE" == linux* || "$OSTYPE" == darwin* ]] &&
+    ! { [[ "$OSTYPE" == linux* ]] && grep -qi microsoft /proc/version 2>/dev/null; }
+}
+
+# Internal constants
+TIMEFMT=$'\nreal\t%E\nuser\t%U\nsys\t%S'    # Better time formatting
+LISTMAX=-1      # Don't limit lists like completions, etc.
+WORDCHARS=''    # Only alphanumerics count as word chars: ^W / Alt-Backspace stop at / . - _ etc.
+
+# Antidote plugin manager
+if [[ ! -d $HOME/.antidote ]]; then
+  git clone --depth=1 https://github.com/mattmc3/antidote.git $HOME/.antidote
+fi
+source "$HOME/.antidote/antidote.zsh"
+
+# Download plugins with Antidote
+# The plugin list lives in the dotfiles; the generated bundle goes to the cache
+# dir so it never ends up inside the stow-managed repo.
+zsh_plugins_txt=$HOME/.config/zsh.d/antidote-plugins.txt
+zsh_plugins_zsh=${XDG_CACHE_HOME:-$HOME/.cache}/antidote-plugins.zsh
+mkdir -p ${zsh_plugins_zsh:h}
+if [[ ! -f $zsh_plugins_zsh || $zsh_plugins_txt -nt $zsh_plugins_zsh ]]; then
+  antidote bundle <$zsh_plugins_txt >|$zsh_plugins_zsh
+fi
+
+autoload -Uz zmv
+
+# Directory navigation
+setopt auto_cd             # Typing a directory name cd's into it
+setopt auto_pushd          # Cd pushes the old dir onto the stack (`dirs -v`, `cd -N`)
+setopt pushd_ignore_dups   # ...without duplicates
+
+# ZSH history settings
+setopt share_history        # Already has inc_append_history builtin
+setopt hist_save_no_dups    # No need for `hist_expire_dups_first`
+setopt hist_ignore_all_dups
+setopt hist_lex_words
+setopt hist_reduce_blanks
+setopt hist_fcntl_lock
+setopt hist_ignore_space    # Don't save commands beginning with a space
+setopt bang_hist            # csh-style history expansion with !
+
+SAVEHIST=5000
+HISTSIZE=5000     # How much commands to keep in memory
+HISTFILE="$HOME/.zsh_history"
+
+zmodload zsh/complist   # Must be loaded before compinit (run by the completion plugin below)
+
+source <(fzf --zsh)     # Load FZF before fzf-tab plugin
+
+# Load plugins after history settings
+# compinit handled by `belak/zsh-utils path:completion` plugin
+source $zsh_plugins_zsh
+
+# Aliases and other sources
+if [ -d $HOME/.config/zsh.d ]; then
+  for file in $HOME/.config/zsh.d/*.*sh; do
+    [ -f "$file" ] && source "$file"
+  done
+fi
+
+# Autosuggestions
+ZSH_AUTOSUGGEST_STRATEGY=(history completion)   # Prioritize history for autosuggestions
+ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-search-down)
+ZSH_AUTOSUGGEST_CLEAR_WIDGETS=("${(@)ZSH_AUTOSUGGEST_CLEAR_WIDGETS:#(up|down)-line-or-history}")
+
+setopt correct # Correct typos. Don't use `correctall`, it has too much false positives
+
+# Enable menu-style completion
+zstyle ':completion:*' complete-options true # may conflit with carapace
+zstyle ':completion:*' menu select=2
+
+# Make completion case-insensitive
+zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
+
+# Color completion lists (and fzf-tab candidates) with LS_COLORS, or a fallback
+if [[ -z $LS_COLORS ]]; then
+  zstyle ':completion:*' list-colors 'di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43:'
+else
+  zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+fi
+
+# Preview folders before changing to them (on tab)
+zstyle ':fzf-tab:complete:-command-:*' fzf-preview \
+  'if [[ -d $realpath ]]; then eza --color=always $realpath; else whatis $word 2>/dev/null; fi'
+
+# Carapace command completions (https://carapace.sh)
+export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense'
+zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
+source <(carapace _carapace)
+
+# Carapace + FZF
+# Disable sort when completing `git checkout`
+zstyle ':completion:*:git-checkout:*' sort false
+# Set descriptions format to enable group support
+zstyle ':completion:*:descriptions' format '[%d]'
+# Preview directory's content with eza/ls when completing cd
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'
+# Switch group using `<` and `>`
+zstyle ':fzf-tab:*' switch-group '<' '>'
+
+# Init zoxide (jump)
+eval "$(zoxide init zsh)"
+
+# Keychain support
+if command -v keychain &>/dev/null; then
+  eval "$(keychain --eval --quiet --agents ssh id_rsa)"
+fi
+
+# Keybindings
+## Home / End / Delete / Shift-Tab (normal + application mode)
+bindkey '^[[H'  beginning-of-line           # HOME
+bindkey '^[OH'  beginning-of-line           # HOME application mode
+bindkey '^[[F'  end-of-line                 # END
+bindkey '^[OF'  end-of-line                 # END application mode
+bindkey '^[[3~' delete-char                 # DELETE
+bindkey '^[[Z'  reverse-menu-complete       # shift + tab
+bindkey '^U'    backward-kill-line          # ctrl + u
+bindkey '^[s'   toggle-sudo                 # alt + s sudo previous command
+## Terminal-specific
+case $TERM in
+  *xterm*)
+    bindkey "^[a" beginning-of-line         # alt + a
+    bindkey "^[[1;6D" beginning-of-line     # ctrl + shift + ←
+    bindkey "^[e" end-of-line               # alt + e
+    bindkey "^[[1;6C" end-of-line           # ctrl + shift + →
+    bindkey "^[[1;5D" backward-word         # ctrl + ←
+    bindkey "^[[1;5C" forward-word          # ctrl + →
+    ;;
+esac
+
+## History navigation
+bindkey "^[[A" history-substring-search-up      # ↑ matches anywhere, not just line start
+bindkey '^[OA' history-substring-search-up      # ↑ application mode
+bindkey "^[[B" history-substring-search-down    # ↓ matches anywhere, not just line start
+bindkey '^[OB' history-substring-search-down    # ↓ application mode
+
+## Expand aliases when pressing Space
+globalias() {
+    if [[ $LBUFFER =~ '(^|[[:space:]])[A-Za-z0-9_-]+$' ]]; then
+        zle _expand_alias
+    fi
+
+    zle magic-space
+}
+zle -N globalias
+bindkey ' ' globalias
+
+## Clear screen, keep buffer
+clear-keep-buffer() {
+    zle clear-screen
+}
+zle -N clear-keep-buffer
+bindkey '^Xl' clear-keep-buffer
+
+## Copy current command to clipboard
+copy-command() {
+    echo -n $BUFFER | pbcopy # or xclip
+    zle -M "Copied to clipboard"
+}
+zle -N copy-command
+bindkey '^Xc' copy-command
+
+# Conditional autoload of python venv in some folders
+if (( $+functions[manage_pro_venv] )); then
+    autoload -Uz add-zsh-hook
+    add-zsh-hook chpwd manage_pro_venv
+    manage_pro_venv
+fi
+
+# Transient prompt shows time when commands were started
+autoload -Uz add-zle-hook-widget
+function _transient_prompt_with_time() {
+  emulate -L zsh
+  local saved_ps1=$PROMPT saved_rps1=$RPROMPT
+  PROMPT='%F{244}%D{%H:%M:%S}%f %F{green}❯%f '
+  RPROMPT=''
+  zle .reset-prompt
+  PROMPT=$saved_ps1
+  RPROMPT=$saved_rps1
+}
+
+add-zle-hook-widget line-finish _transient_prompt_with_time
+
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+
+# Powerlevel10k theme
+_p10k_dir=${XDG_CONFIG_HOME:-$HOME/.config}/p10k
+[[ ! -f $_p10k_dir/p10k.zsh ]] || source $_p10k_dir/p10k.zsh    # Powerlevel10k theme
+[[ -f $_p10k_dir/p10k-theme.zsh ]] && source $_p10k_dir/p10k-theme.zsh
+unset _p10k_dir
+(( ! $+functions[p10k] )) || p10k reload
+
+# zprof | head -20    # profiling, see the first line
