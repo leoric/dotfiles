@@ -35,16 +35,17 @@ setopt auto_pushd          # Cd pushes the old dir onto the stack (`dirs -v`, `c
 setopt pushd_ignore_dups   # ...without duplicates
 
 # ZSH history settings
-setopt share_history    # Already has inc_append_history builtin
+setopt share_history        # Already has inc_append_history builtin
 setopt hist_save_no_dups    # No need for `hist_expire_dups_first`
-setopt hist_fcntl_lock
 setopt hist_ignore_all_dups
 setopt hist_lex_words
 setopt hist_reduce_blanks
-setopt bang_hist   # csh-style history expansion with !
+setopt hist_fcntl_lock
+setopt hist_ignore_space    # Don't save commands beginning with a space
+setopt bang_hist            # csh-style history expansion with !
 
-SAVEHIST=50000
-HISTSIZE=50000     # How much commands to keep in memory
+SAVEHIST=5000
+HISTSIZE=5000     # How much commands to keep in memory
 HISTFILE="$HOME/.zsh_history"
 
 zmodload zsh/complist   # Must be loaded before compinit (run by the completion plugin below)
@@ -82,6 +83,10 @@ if [[ -z $LS_COLORS ]]; then
 else
   zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 fi
+
+# Preview folders before changing to them (on tab)
+zstyle ':fzf-tab:complete:-command-:*' fzf-preview \
+  'if [[ -d $realpath ]]; then eza --color=always $realpath; else whatis $word 2>/dev/null; fi'
 
 # Carapace command completions (https://carapace.sh)
 export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense'
