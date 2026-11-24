@@ -44,6 +44,9 @@ if [[ -s "$HOME/.config/eza/theme.yml" ]]; then
     unset LS_COLORS EZA_COLORS EXA_COLORS
 elif command -v vivid >/dev/null 2>&1; then
     export LS_COLORS="$(vivid generate gruvbox-dark)"
+elif [[ -x /usr/bin/dircolors ]]; then
+    # Linux fallback (from vanilli.sh): honor ~/.dircolors, else built-in defaults
+    eval "$(dircolors -b ~/.dircolors 2>/dev/null || dircolors -b)"
 fi
 
 umask 002

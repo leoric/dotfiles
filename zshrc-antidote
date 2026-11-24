@@ -1,47 +1,55 @@
-zmodload zsh/zprof
-_is_supported_os() { # Internal function used in conditional plugin laod
+# zmodload zsh/zprof    # profiling, see the last line
+
+# Internal function used in conditional plugin load
+_is_supported_os() {
   [[ "$OSTYPE" == linux* || "$OSTYPE" == darwin* ]] &&
     ! { [[ "$OSTYPE" == linux* ]] && grep -qi microsoft /proc/version 2>/dev/null; }
 }
 
 # Internal constants
-TIMEFMT=$'\nreal\t%E\nuser\t%U\nsys\t%S'  # Better time formatting
-LISTMAX=-1   # Don't limit lists like completions, etc.
+TIMEFMT=$'\nreal\t%E\nuser\t%U\nsys\t%S'    # Better time formatting
+LISTMAX=-1      # Don't limit lists like completions, etc.
+WORDCHARS=''    # Only alphanumerics count as word chars: ^W / Alt-Backspace stop at / . - _ etc.
 
 # Antidote plugin manager
 if [[ ! -d $HOME/.antidote ]]; then
   git clone --depth=1 https://github.com/mattmc3/antidote.git $HOME/.antidote
 fi
-
-# Download plugins with Antidote
 source "$HOME/.antidote/antidote.zsh"
 
-if [[ ! -f "$HOME/.zsh_plugins.zsh" ||
-      "$HOME/.zsh_plugins.txt" -nt "$HOME/.zsh_plugins.zsh" ]]; then
-  antidote bundle < "$HOME/.zsh_plugins.txt" > "$HOME/.zsh_plugins.zsh"
+# Download plugins with Antidote
+zsh_plugins=${ZDOTDIR:-$HOME}/.zsh_plugins
+if [[ ! -f ${zsh_plugins}.zsh || ${zsh_plugins}.txt -nt ${zsh_plugins}.zsh ]]; then
+  antidote bundle <${zsh_plugins}.txt >|${zsh_plugins}.zsh
 fi
 
 autoload -Uz zmv
 
+# Directory navigation
+setopt auto_cd             # Typing a directory name cd's into it
+setopt auto_pushd          # Cd pushes the old dir onto the stack (`dirs -v`, `cd -N`)
+setopt pushd_ignore_dups   # ...without duplicates
+
 # ZSH history settings
-setopt share_history    # already has inc_append_history builtin
+setopt share_history    # Already has inc_append_history builtin
 setopt hist_save_no_dups    # No need for `hist_expire_dups_first`
 setopt hist_fcntl_lock
 setopt hist_ignore_all_dups
 setopt hist_lex_words
 setopt hist_reduce_blanks
-#setopt BANG_HIST # history expansion with !, default on
+setopt bang_hist   # csh-style history expansion with !
 
-HISTSIZE=11000
-SAVEHIST=10000
+SAVEHIST=50000
+HISTSIZE=50000     # How much commands to keep in memory
 HISTFILE="$HOME/.zsh_history"
 
-# Load FZF before fzf-tab plugin
-source <(fzf --zsh)
+zmodload zsh/complist   # Must be loaded before compinit (run by the completion plugin below)
+
+source <(fzf --zsh)     # Load FZF before fzf-tab plugin
 
 # Load plugins after history settings
 # compinit handled by `belak/zsh-utils path:completion` plugin
-source "$HOME/.zsh_plugins.zsh"
+source ${zsh_plugins}.zsh
 
 # Aliases and other sources
 if [ -d $HOME/.zsh_includes ]; then
@@ -50,15 +58,12 @@ if [ -d $HOME/.zsh_includes ]; then
   done
 fi
 
-## Autosuggestions
+# Autosuggestions
 ZSH_AUTOSUGGEST_STRATEGY=(history completion)   # Prioritize history for autosuggestions
-
-## Autosuggestions clear settings
 ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-search-down)
 ZSH_AUTOSUGGEST_CLEAR_WIDGETS=("${(@)ZSH_AUTOSUGGEST_CLEAR_WIDGETS:#(up|down)-line-or-history}")
 
-# Correct typos
-setopt correct # don't use `correctall`, it has too much false positives
+setopt correct # Correct typos. Don't use `correctall`, it has too much false positives
 
 # Enable menu-style completion
 zstyle ':completion:*' complete-options true # may conflit with carapace
@@ -66,14 +71,20 @@ zstyle ':completion:*' menu select=2
 
 # Make completion case-insensitive
 zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
-zmodload zsh/complist
+
+# Color completion lists (and fzf-tab candidates) with LS_COLORS, or a fallback
+if [[ -z $LS_COLORS ]]; then
+  zstyle ':completion:*' list-colors 'di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43:'
+else
+  zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+fi
 
 # Carapace command completions (https://carapace.sh)
 export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense'
 zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
 source <(carapace _carapace)
 
-# Carapace + fzf
+# Carapace + FZF
 # Disable sort when completing `git checkout`
 zstyle ':completion:*:git-checkout:*' sort false
 # Set descriptions format to enable group support
@@ -92,25 +103,32 @@ if command -v keychain &>/dev/null; then
 fi
 
 # Keybindings
+## Home / End / Delete / Shift-Tab (normal + application mode)
+bindkey '^[[H'  beginning-of-line           # HOME
+bindkey '^[OH'  beginning-of-line           # HOME application mode
+bindkey '^[[F'  end-of-line                 # END
+bindkey '^[OF'  end-of-line                 # END application mode
+bindkey '^[[3~' delete-char                 # DELETE
+bindkey '^[[Z'  reverse-menu-complete       # shift + tab
+bindkey '^U'    backward-kill-line          # ctrl + u
+
 ## Terminal-specific
 case $TERM in
   *xterm*)
-    bindkey "^[[3~" delete-char
-    bindkey "^[a" beginning-of-line
-    bindkey "^[^B" beginning-of-line
-    bindkey "^[[1;5D" beginning-of-line
-    bindkey "^[e" end-of-line
-    bindkey "^[^F" end-of-line
-    bindkey "^[[1;6D" end-of-line
-    bindkey '^U' backward-kill-line
+    bindkey "^[a" beginning-of-line         # alt + a
+    bindkey "^[[1;6D" beginning-of-line     # ctrl + shift + ←
+    bindkey "^[e" end-of-line               # alt + e
+    bindkey "^[[1;6C" end-of-line           # ctrl + shift + →
+    bindkey "^[[1;5D" backward-word         # ctrl + ←
+    bindkey "^[[1;5C" forward-word          # ctrl + →
     ;;
 esac
 
 ## History navigation
-bindkey "^[[A" history-substring-search-up      # matches anywhere, not just line start
-bindkey '^[OA' history-substring-search-up      # application mode
-bindkey "^[[B" history-substring-search-down    # matches anywhere, not just line start
-bindkey '^[OB' history-substring-search-down    # application mode
+bindkey "^[[A" history-substring-search-up      # ↑ matches anywhere, not just line start
+bindkey '^[OA' history-substring-search-up      # ↑ application mode
+bindkey "^[[B" history-substring-search-down    # ↓ matches anywhere, not just line start
+bindkey '^[OB' history-substring-search-down    # ↓ application mode
 
 ## Expand aliases when pressing Space
 globalias() {
@@ -147,7 +165,6 @@ fi
 
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 
-# Starship prompt (config: ~/.config/starship.toml) goes last
-eval "$(starship init zsh)"
+eval "$(starship init zsh)"    # Starship prompt (config: ~/.config/starship.toml) goes last
 
-zprof | head -20
+# zprof | head -20    # profiling, see the first line
