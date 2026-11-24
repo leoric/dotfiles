@@ -102,6 +102,15 @@ if [ -n "$ZSH_VERSION" ]; then
     alias -s avif='open'
 fi
 
+#
+if [[ "$OSTYPE" == linux* ]]; then
+    if (( $+commands[wl-paste] )); then
+        alias pbpaste='wl-paste'
+    elif (( $+commands[xclip] )); then
+        alias pbpaste='xclip -o -selection clipboard'
+    fi
+fi
+
 # Global python environment
 alias venv='source $PYTHON_DEFAULT_VENV/bin/activate'
 
