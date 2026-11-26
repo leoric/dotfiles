@@ -10,11 +10,6 @@ _is_supported_os() {
     ! { [[ "$OSTYPE" == linux* ]] && grep -qi microsoft /proc/version 2>/dev/null; }
 }
 
-# Internal constants
-TIMEFMT=$'\nreal\t%E\nuser\t%U\nsys\t%S'    # Better time formatting
-LISTMAX=-1      # Don't limit lists like completions, etc.
-WORDCHARS=''    # Only alphanumerics count as word chars: ^W / Alt-Backspace stop at / . - _ etc.
-
 # Antidote plugin manager
 if [[ ! -d $HOME/.antidote ]]; then
   git clone --depth=1 https://github.com/mattmc3/antidote.git $HOME/.antidote
@@ -53,12 +48,21 @@ HISTSIZE=5000     # How much commands to keep in memory
 HISTFILE="$HOME/.zsh_history"
 
 zmodload zsh/complist   # Must be loaded before compinit (run by the completion plugin below)
-
 source <(fzf --zsh)     # Load FZF before fzf-tab plugin
 
 # Load plugins after history settings
 # compinit handled by `belak/zsh-utils path:completion` plugin
 source $zsh_plugins_zsh
+
+# Internal constants (after plugins)
+TIMEFMT=$'\nreal\t%E\nuser\t%U\nsys\t%S'    # Better time formatting
+LISTMAX=9999    # Never prompt "do you wish to see all N lines?"
+WORDCHARS=''    # Only alphanumerics count as word chars: ^W / Alt-Backspace stop at / . - _ etc.
+
+# Carapace command completions (https://carapace.sh)
+export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense'
+export CARAPACE_LENIENT=1    # Don't fail on unknown flags
+source <(carapace _carapace)
 
 # Aliases and other sources
 if [ -d $HOME/.config/zsh.d ]; then
@@ -73,44 +77,31 @@ ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-se
 ZSH_AUTOSUGGEST_CLEAR_WIDGETS=("${(@)ZSH_AUTOSUGGEST_CLEAR_WIDGETS:#(up|down)-line-or-history}")
 
 setopt correct # Correct typos. Don't use `correctall`, it has too much false positives
+zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*' # Make completion case-insensitive
 
 # Enable menu-style completion
-zstyle ':completion:*' complete-options true # may conflit with carapace
-zstyle ':completion:*' menu select no # fzf-tab compliant
+zstyle ':completion:*' complete-options true        # May conflit with carapace
+zstyle ':completion:*' menu select no               # fzf-tab compliant
+zstyle ':completion:*:descriptions' format '[%d]'   # Set descriptions format to enable group support
 
-# Make completion case-insensitive
-zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
+# Carapace + FZF
+zstyle ':completion:*:git-checkout:*' sort false    # Disable sort when completing `git checkout`
+zstyle ':fzf-tab:complete:*:*' fzf-preview '[[ -d ${(Q)realpath} ]] && ls -la ${(Q)realpath}'   # Preview directory contents for path completions
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'   # Preview directory's content with eza/ls when completing cd
+## Preview folders before changing to them (on tab)
+zstyle ':fzf-tab:complete:-command-:*' fzf-preview \
+  'if [[ -d $realpath ]]; then eza --color=always $realpath; else whatis $word 2>/dev/null; fi'
+zstyle ':fzf-tab:*' query-string prefix
+zstyle ':fzf-tab:*' switch-group '<' '>'    # Switch group using `<` and `>`
 
-# Color completion lists (and fzf-tab candidates) with LS_COLORS, or a fallback
+## Color completion lists (and fzf-tab candidates) with LS_COLORS, or a fallback
 if [[ -z $LS_COLORS ]]; then
   zstyle ':completion:*' list-colors 'di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43:'
 else
   zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 fi
 
-# Preview folders before changing to them (on tab)
-zstyle ':fzf-tab:complete:-command-:*' fzf-preview \
-  'if [[ -d $realpath ]]; then eza --color=always $realpath; else whatis $word 2>/dev/null; fi'
-
-# Carapace command completions (https://carapace.sh)
-export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense'
-zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
-source <(carapace _carapace)
-
-# Carapace + FZF
-zstyle ':completion:*:git-checkout:*' sort false    # Disable sort when completing `git checkout`
-zstyle ':completion:*:descriptions' format '[%d]'   # Set descriptions format to enable group support
-zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'   # Preview directory's content with eza/ls when completing cd
-zstyle ':fzf-tab:*' query-string prefix
-zstyle ':fzf-tab:*' switch-group '<' '>'    # Switch group using `<` and `>`
 zstyle ':completion:*' completer _complete _ignored _files # Fallback if carapace finds nothing
-
-# Preview directory contents for path completions
-zstyle ':fzf-tab:complete:*:*' fzf-preview \
-  '[[ -d ${(Q)realpath} ]] && ls -la ${(Q)realpath}'
-
-# Make sure descriptions are available
-zstyle ':completion:*:descriptions' format '[%d]'
 
 # Init zoxide (jump)
 eval "$(zoxide init zsh)"
