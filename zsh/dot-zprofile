@@ -37,9 +37,10 @@ export HF_TOKEN="$(security find-generic-password -a "$USER" -s "HF_TOKEN" -w)"
 typeset -U path
 path=(
     "$HOME/.local/bin"
-    "$PYTHON_DEFAULT_VENV/bin"
-    "$HOME/.spoofdpi/bin"
     "$HOME/MEGA/IT/bin"
+    "$PYTHON_DEFAULT_VENV/bin"
+    "$HOME/.cargo/bin"
+    "$HOME/.spoofdpi/bin"
     $path
 )
 
