@@ -33,7 +33,6 @@ alias gsw='git switch'
 alias gsc='git switch -c'
 alias gsm='git switch main'
 alias gcf='git config --list'
-alias gcl='git clone --recursive'
 alias gclean='git clean -fd'
 alias gpristine='git reset --hard && git clean -dfx'
 
@@ -136,3 +135,11 @@ alias gunignore='git update-index --no-assume-unchanged'
 
 alias gwip='git add -A; git rm $(git ls-files --deleted) 2> /dev/null; git commit -m "--wip--"'
 alias gunwip='git log -n 1 | grep -q -c "\-\-wip\-\-" && git reset HEAD~1'
+
+# Clone and go in
+gcl() {
+  local url="$1"
+  local dir="${2:-${url:t:r}}"
+
+  git clone --recursive "$url" "$dir" && cd "$dir"
+}
