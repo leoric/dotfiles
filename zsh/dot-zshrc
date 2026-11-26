@@ -76,7 +76,7 @@ setopt correct # Correct typos. Don't use `correctall`, it has too much false po
 
 # Enable menu-style completion
 zstyle ':completion:*' complete-options true # may conflit with carapace
-zstyle ':completion:*' menu select=2
+zstyle ':completion:*' menu select no # fzf-tab compliant
 
 # Make completion case-insensitive
 zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
@@ -98,14 +98,19 @@ zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
 source <(carapace _carapace)
 
 # Carapace + FZF
-# Disable sort when completing `git checkout`
-zstyle ':completion:*:git-checkout:*' sort false
-# Set descriptions format to enable group support
+zstyle ':completion:*:git-checkout:*' sort false    # Disable sort when completing `git checkout`
+zstyle ':completion:*:descriptions' format '[%d]'   # Set descriptions format to enable group support
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'   # Preview directory's content with eza/ls when completing cd
+zstyle ':fzf-tab:*' query-string prefix
+zstyle ':fzf-tab:*' switch-group '<' '>'    # Switch group using `<` and `>`
+zstyle ':completion:*' completer _complete _ignored _files # Fallback if carapace finds nothing
+
+# Preview directory contents for path completions
+zstyle ':fzf-tab:complete:*:*' fzf-preview \
+  '[[ -d ${(Q)realpath} ]] && ls -la ${(Q)realpath}'
+
+# Make sure descriptions are available
 zstyle ':completion:*:descriptions' format '[%d]'
-# Preview directory's content with eza/ls when completing cd
-zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'
-# Switch group using `<` and `>`
-zstyle ':fzf-tab:*' switch-group '<' '>'
 
 # Init zoxide (jump)
 eval "$(zoxide init zsh)"
@@ -142,6 +147,22 @@ bindkey "^[[A" history-substring-search-up      # ↑ matches anywhere, not just
 bindkey '^[OA' history-substring-search-up      # ↑ application mode
 bindkey "^[[B" history-substring-search-down    # ↓ matches anywhere, not just line start
 bindkey '^[OB' history-substring-search-down    # ↓ application mode
+
+## Accept autosuggestion word-by-word on Right Arrow (breaks on spaces and /)
+autosuggest-partial-accept-or-forward-char() {
+  if [[ -n $POSTDISPLAY && $CURSOR -eq ${#BUFFER} ]]; then
+    # Temporarily keep . _ - as word characters so it stops only at spaces and /
+    local WORDCHARS='._-'
+    zle forward-word
+  else
+    zle forward-char
+  fi
+}
+zle -N autosuggest-partial-accept-or-forward-char
+ZSH_AUTOSUGGEST_IGNORE_WIDGETS+=(autosuggest-partial-accept-or-forward-char)
+
+bindkey '^[[C' autosuggest-partial-accept-or-forward-char   # → normal mode
+bindkey '^[OC' autosuggest-partial-accept-or-forward-char   # → application mode
 
 ## Expand aliases when pressing Space
 globalias() {
