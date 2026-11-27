@@ -33,6 +33,7 @@ set cursorline
 set ruler
 set fileencodings=utf-8,cp1251,cp866,koi8-r
 set background=dark
+set clipboard+=unnamedplus
 
 " Neovim uses UTF-8 internally. 'encoding' and 'termencoding' are not set here.
 
