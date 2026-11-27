@@ -7,11 +7,13 @@ if command -v eza >/dev/null 2>&1; then
     # eza aliases
     alias eza='eza --git --icons --color=auto --classify=auto --color-scale=all'
     alias ls='eza'
-    alias lt='eza --tree'
+    alias lt='eza -la -T'
     alias ll='eza -A'
     alias la='eza -a'
     alias l1='eza -1'
+    alias lo='eza -l@'
     alias l='eza -la'
+    alias t='eza -T'
 else
     # Fallback standard ls aliases
     alias ls='ls --color=auto -F'
