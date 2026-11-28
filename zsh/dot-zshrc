@@ -158,9 +158,12 @@ bindkey '^[OC' autosuggest-partial-accept-or-forward-char   # → application mo
 ## Expand aliases when pressing Space
 globalias() {
     if [[ $LBUFFER =~ '(^|[[:space:]])[A-Za-z0-9_-]+$' ]]; then
-        zle _expand_alias
+        local prev=""
+        while [[ "$LBUFFER" != "$prev" ]]; do
+            prev="$LBUFFER"
+            zle _expand_alias
+        done
     fi
-
     zle magic-space
 }
 zle -N globalias

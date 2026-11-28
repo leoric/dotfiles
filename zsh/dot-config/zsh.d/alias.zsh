@@ -35,8 +35,8 @@ if [ -n "$ZSH_VERSION" ]; then
     alias rm='nocorrect rm'
 fi
 
-alias _='sudo'
-alias please='sudo'
+alias _='sudo ' # space is for recursive alias expnasion
+alias please='sudo ' # space is for recursive alias expnasion
 alias cpr='cp -r'
 alias cps='_ cp -r'
 alias rms='_ rm -r'
