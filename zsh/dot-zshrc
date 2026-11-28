@@ -155,20 +155,6 @@ ZSH_AUTOSUGGEST_IGNORE_WIDGETS+=(autosuggest-partial-accept-or-forward-char)
 bindkey '^[[C' autosuggest-partial-accept-or-forward-char   # → normal mode
 bindkey '^[OC' autosuggest-partial-accept-or-forward-char   # → application mode
 
-## Expand aliases when pressing Space
-globalias() {
-    if [[ $LBUFFER =~ '(^|[[:space:]])[A-Za-z0-9_-]+$' ]]; then
-        local prev=""
-        while [[ "$LBUFFER" != "$prev" ]]; do
-            prev="$LBUFFER"
-            zle _expand_alias
-        done
-    fi
-    zle magic-space
-}
-zle -N globalias
-bindkey ' ' globalias
-
 ## Clear screen, keep buffer
 clear-keep-buffer() {
     zle clear-screen
@@ -184,12 +170,41 @@ copy-command() {
 zle -N copy-command
 bindkey '^Xc' copy-command
 
-# Conditional autoload of python venv in some folders
-if (( $+functions[manage_pro_venv] )); then
-    autoload -Uz add-zsh-hook
-    add-zsh-hook chpwd manage_pro_venv
-    manage_pro_venv
+# Expand aliases when pressing Space
+typeset -g _GLOBALIAS_EXPANDED=0
+
+globalias() {
+    if [[ $LBUFFER =~ '(^|[[:space:]])[A-Za-z0-9_-]+$' ]]; then
+        local prev="$LBUFFER"
+        while true; do
+            local before="$LBUFFER"
+            zle _expand_alias
+            [[ "$LBUFFER" == "$before" ]] && break
+        done
+        # Mark that an alias was expanded during this prompt
+        [[ "$LBUFFER" != "$prev" ]] && _GLOBALIAS_EXPANDED=1
+    fi
+    zle magic-space
+}
+zle -N globalias
+bindkey ' ' globalias
+
+## Wrap alias-tips' preexec hook to respect the flag
+if (( $+functions[_alias_tips__preexec] )); then
+    functions[_alias_tips__preexec_orig]=$functions[_alias_tips__preexec]
+
+    _alias_tips__preexec() {
+        (( _GLOBALIAS_EXPANDED )) && return 0
+        _alias_tips__preexec_orig "$@"
+    }
 fi
+
+# Reset the flag before the next prompt (even on empty Enter or Ctrl+C)
+autoload -Uz add-zsh-hook
+_reset_globalias_flag() {
+    _GLOBALIAS_EXPANDED=0
+}
+add-zsh-hook precmd _reset_globalias_flag
 
 # Transient prompt shows time when commands were started
 autoload -Uz add-zle-hook-widget
@@ -202,8 +217,14 @@ function _transient_prompt_with_time() {
   PROMPT=$saved_ps1
   RPROMPT=$saved_rps1
 }
-
 add-zle-hook-widget line-finish _transient_prompt_with_time
+
+# Conditional autoload of python venv in some folders
+if (( $+functions[manage_pro_venv] )); then
+    autoload -Uz add-zsh-hook
+    add-zsh-hook chpwd manage_pro_venv
+    manage_pro_venv
+fi
 
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 
