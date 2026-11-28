@@ -29,12 +29,6 @@ alias lg='la | grep'
 alias md='mkdir -p'
 alias rd='rmdir'
 
-if [ -n "$ZSH_VERSION" ]; then
-    alias cp='nocorrect cp'
-    alias mv='nocorrect mv'
-    alias rm='nocorrect rm'
-fi
-
 alias _='sudo ' # space is for recursive alias expnasion
 alias please='sudo ' # space is for recursive alias expnasion
 alias cpr='cp -r'
