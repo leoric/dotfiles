@@ -43,16 +43,43 @@ alias rms='_ rm -r'
 alias mvs='_ mv'
 alias vis='_ vim'
 
-alias bi='brew install'
-alias br='brew remove'
-alias bd='brew doctor'
-alias bc='brew cleanup --prune=all'
+case "$OSTYPE" in
+    darwin*)
+        alias bi='brew install'
+        alias br='brew remove'
+        alias bd='brew doctor'
+        alias bc='brew cleanup --prune=all'
+        ;;
 
-alias apti='_ apt install'
-alias aptu='_ apt update'
-alias aptr='_ apt remove'
-alias apta='_ apt autoremove'
-alias aptp='_ apt purge'
+    linux*)
+        if [[ -r /etc/os-release ]]; then
+            # Read os-release in a subshell so its variables (NAME, ID, etc.) don't pollute your shell
+            distro_id=$(. /etc/os-release && echo "$ID $ID_LIKE")
+        fi
+
+        case "$distro_id" in
+            *ubuntu*|*debian*)
+                alias apti='_ apt install'
+                alias aptu='_ apt update'
+                alias aptr='_ apt remove'
+                alias apta='_ apt autoremove'
+                alias aptp='_ apt purge'
+                ;;
+
+            *arch*|*garuda*)
+                alias paci='_ pacman -S'
+                alias pacu='_ pacman -Syu'
+                alias pacr='_ pacman -Rns'
+                alias pacs='pacman -Ss'
+                alias pacq='pacman -Qs'
+                alias pacc='_ pacman -Sc'
+                # Remove orphaned packages (equivalent to apt autoremove)
+                alias paca='pacman -Qtdq | _ pacman -Rns -'
+                ;;
+        esac
+        unset distro_id
+        ;;
+esac
 
 alias h='history'
 alias grep='grep -E'
@@ -117,9 +144,11 @@ fi
 alias venv='source $PYTHON_DEFAULT_VENV/bin/activate'
 
 # Open Sublime Text
-subl() {
-    /Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl "$@"
-}
+if [[ -x "/Applications/Sublime Text.app/Contents/SharedSupport/bin/subl" ]]; then
+    subl() {
+        "/Applications/Sublime Text.app/Contents/SharedSupport/bin/subl" "$@"
+    }
+fi
 
 # Change dir and list
 cl() {
